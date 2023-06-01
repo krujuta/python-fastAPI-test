@@ -1,0 +1,13 @@
+beta_settings:
+  cloud_sql_instances: test-platform-lab:europe-west3:test-postgresql-lab
+
+env_variables:
+  # Backend
+  PROJECT_ID: "test-platform-lab"
+
+  # Postgres
+  POSTGRES_SERVER: 34.159.249.212
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: Admin123
+  POSTGRES_DB: postgres
+

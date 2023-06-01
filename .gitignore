@@ -1,1 +1,10 @@
+**__pycache__**
+**app.egg-info
+*.vscode
+*.mypy_cache
+**docker-stack.yml
+**.ipynb**
 *.idea/
+
+.backend/app/alembic/versions/
+.pytest_cache

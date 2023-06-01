@@ -1,92 +1,127 @@
-# main-app
+# test-fastapi
+
+## Backend Requirements
+
+* [Docker](https://www.docker.com/).
+* [Docker Compose](https://docs.docker.com/compose/install/).
+* [Poetry](https://python-poetry.org/) for Python package and environment management.
 
 
+## Folder Structure
+- **Scripts** Here are scripts which get exectuted inside the `docker-compose.override.yml`.
+  - scripts come from template repository.
+  - Not touched for current development.
+  - Needed for the proper docker compose.
+- **Backend** Actual backend code
+  - `backend.dockerfile` for the backend image
+  - app folder for the actual code
+    - alembic: folder for alchemist framework for db management
+      - `env.py`:manages env for the DB
+      - versions folder: revisiong of the DB versions
+    - app
+    - scripts
 
-## Getting started
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Dockerization
+Docker compose is used to orchastrate 4 images. Traefik is used for service-to-service communication. 
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+In `dockercompose.yml` all four images are created
+- backend (contained in ./backend)
+- PostgreSQL (pull prebuild image)
+- PGAdmin (pull prebuild image)
+- Network proxy (pull prebuild image)
 
-## Add your files
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
+## Environment Setup
+The `.env` file contains the environment settings, which are passed in the `dockercompose.yml` to the respective images. In the image itself the environment variables
+can be accessed via
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/Innovation-Product-Builders/MIE/back_end/main-app.git
-git branch -M main
-git push -uf origin main
+import os
+os.environ.get("ENV_VAR")
 ```
 
-## Integrate with your tools
 
-- [ ] [Set up project integrations](https://gitlab.com/Innovation-Product-Builders/MIE/back_end/main-app/-/settings/integrations)
+## Backend local development
 
-## Collaborate with your team
+* Build images and start the stack with Docker Compose:
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+```bash
+docker-compose up -d
+```
 
-## Test and Deploy
+* Now you can open your browser and interact with these URLs:
 
-Use the built-in continuous integration in GitLab.
+Backend, JSON based web API based on OpenAPI: http://localhost/api/
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+Automatic interactive documentation with Swagger UI (from the OpenAPI backend): http://localhost/docs
 
-***
+Alternative automatic documentation with ReDoc (from the OpenAPI backend): http://localhost/redoc
 
-# Editing this README
+PGAdmin, PostgreSQL web administration: http://localhost:5050
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!).  Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
+**Note**: The first time you start your stack, it might take a minute for it to be ready. While the backend waits for the database to be ready and configures everything. You can check the logs to monitor it.
 
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+To check the logs, run:
 
-## Name
-Choose a self-explaining name for your project.
+```bash
+docker-compose logs
+```
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+To check the logs of a specific service, add the name of the service, e.g.:
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+```bash
+docker-compose logs backend
+```
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+## Database Development
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+### Database Schemas
+DB Schemas are maintained in `app/app/models`. One files creates one table.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+The folder structure is as follows:
+- `app/app/models`: contains all table schemas which are relevant throught the whole app
+- `app/app/models/<app-module>`: contains all table schemas which are relevant for the mentioned app-module
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+### Performing CRUD operations
+CRUD opterations are maintained in `app/app/crud`. 
+- `base.py`: Parent class for all CRUD operations on specific tables. Contains the general logic which needs to be parameterized by the child classes
+   for a given table
+- folder / file structure identical to `app/app/models` folder since it follows also the one files per table policy.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+### DB Alchemist Maintenance
+In the folder `app/app/db` all tables need to be mentioned in order to be picked up and properly being updated.
+- `base.py`:list all models
+- `init_db.py`: update tables during deployment without creating a new revision
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
 
-## License
-For open source projects, say how it is licensed.
+### Database Updates in running images
+To execute the changes while the image is running, the following commands are needed:
+```
+cd <root>/service-main
+docker-compose exec backend bash
+alembic revision --autogenerate -m "<Comment for changes>"
+```
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+
+## API Development
+
+### API Data Models
+API data models are maintained in `app/app/schemas`. App-wide files are directly contained in this folder. Files, which are relevant for specific modules
+are contained in a subfolder for that module. **Follows the same file / folder structure as `app/app/models`**.
+
+### Common API functionality
+Functionality that is used in more than just one specific end-point is contained in the folder `app/app/core`. In particular, this folder contains
+- the recommendation logic
+
+### API end-points
+The API end-points are defined in the folder `app/app/api`.
+- `deps.py`: contains information about the current users
+- `api_v1/api.py`: contains the routers to the sub-areas
+- `api_v1/endpoints`: folder containing the actual endpoints. Structure follows the folder `app/app/models`.
+
+
+### Login
+- The folder `app/app/email-templates` contains the functionality to reset the user token with email and password.

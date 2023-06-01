@@ -1,30 +1,27 @@
-# pull official base image
-FROM python:3.10-alpine
+FROM debian:11
 
-# set work directory
-WORKDIR /app
+# install python3 and pip
+RUN apt-get update && apt-get install -y python3.9 python3-pip
+RUN python3 -m pip install --upgrade pip
+RUN pip cache purge
 
-# set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-ENV DEBUG 0
+# add and change to non-root user in image
+ENV HOME=/home/worker/app
+RUN adduser --home ${HOME} --disabled-password worker
+RUN chown worker:worker ${HOME}
+USER worker
 
-# install psycopg2
-RUN apk update \
-    && apk add --virtual build-essential gcc python3-dev musl-dev \
-    && apk add postgresql-dev \
-    && pip install psycopg2
+# Set the working directory for any following RUN, CMD, ENTRYPOINT, COPY and ADD instructions
+WORKDIR ${HOME}
+
+# copy requirement file & update python environment
+COPY  requirements.txt ${HOME}/requirements.txt
+
+# copy files
+COPY ./lib ${HOME}/
+ENV PYTHONPATH="${HOME}/app:${PYTHONPATH}"
 
 # install dependencies
-COPY ./requirements.txt .
-RUN pip install -r requirements.txt
-
-# copy project
-COPY . .
-
-# add and run as non-root user
-RUN adduser -D myuser
-USER myuser
-
-# run gunicorn
-CMD gunicorn app.wsgi:application --bind 0.0.0.0:30
+RUN pip install -r ${HOME}/requirements.txt
+EXPOSE 8080
+CMD ["python3", "main.py"]
